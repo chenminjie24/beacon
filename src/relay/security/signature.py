@@ -6,6 +6,7 @@ import hashlib
 import hmac
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
+from typing import Any, Callable
 
 from relay.domain.exceptions import AuthError, ReplayError
 
@@ -41,6 +42,37 @@ class MemoryReplayGuard(ReplayGuard):
         stale = [k for k, expire in self._nonces.items() if expire <= now]
         for key in stale:
             self._nonces.pop(key, None)
+
+
+class PostgresReplayGuard(ReplayGuard):
+    """Replay guard backed by PostgreSQL request_nonces table."""
+
+    def __init__(self, connection_factory: Callable[[], Any]) -> None:
+        self._connection_factory = connection_factory
+
+    def check_and_store(self, nonce: str, now: datetime, ttl_seconds: int) -> None:
+        expires_at = now + timedelta(seconds=ttl_seconds)
+        conn = self._connection_factory()
+        cur = conn.cursor()
+        try:
+            cur.execute("DELETE FROM request_nonces WHERE expires_at <= %s", (now,))
+            cur.execute(
+                """
+                INSERT INTO request_nonces (nonce, expires_at)
+                VALUES (%s, %s)
+                ON CONFLICT DO NOTHING
+                """,
+                (nonce, expires_at),
+            )
+            if cur.rowcount != 1:
+                raise ReplayError("replayed request")
+            conn.commit()
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            cur.close()
+            conn.close()
 
 
 class SignatureVerifier:

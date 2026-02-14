@@ -7,7 +7,7 @@ from dataclasses import replace
 from datetime import datetime
 from decimal import Decimal
 
-from relay.domain.enums import Action, OrderStatus, TaskStatus
+from relay.domain.enums import Action, OrderStatus, OrderType, TaskStatus
 from relay.domain.models import (
     AgentHeartbeat,
     AuditEvent,
@@ -50,6 +50,47 @@ class InMemoryRelayRepository:
     def get_signal_by_db_id(self, signal_db_id: int) -> SignalRecord | None:
         with self._lock:
             return self._signals_by_id.get(signal_db_id)
+
+    def list_signals(
+        self,
+        *,
+        limit: int,
+        offset: int,
+        query: str | None,
+        action: Action | None,
+        order_type: OrderType | None,
+        since: datetime | None,
+        until: datetime | None,
+    ) -> list[SignalRecord]:
+        with self._lock:
+            signals = list(self._signals_by_id.values())
+            signals.sort(key=lambda item: item.id, reverse=True)
+
+            def _match(record: SignalRecord) -> bool:
+                if query:
+                    needle = query.lower()
+                    haystack = "|".join(
+                        [
+                            record.signal_id,
+                            record.strategy_id,
+                            record.account_id,
+                            record.symbol,
+                        ]
+                    ).lower()
+                    if needle not in haystack:
+                        return False
+                if action is not None and record.action != action:
+                    return False
+                if order_type is not None and record.order_type != order_type:
+                    return False
+                if since is not None and record.ts < since:
+                    return False
+                if until is not None and record.ts > until:
+                    return False
+                return True
+
+            filtered = [record for record in signals if _match(record)]
+            return filtered[offset : offset + limit]
 
     def create_signal(self, cmd: SignalCommand, payload_hash: str, sig_valid: bool, now: datetime) -> SignalRecord:
         with self._lock:

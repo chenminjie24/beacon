@@ -128,6 +128,56 @@ class PostgresRelayRepository:
             row = _fetchone_dict(cur)
             return _to_signal(row) if row else None
 
+    def list_signals(
+        self,
+        *,
+        limit: int,
+        offset: int,
+        query: str | None,
+        action: Action | None,
+        order_type: OrderType | None,
+        since: datetime | None,
+        until: datetime | None,
+    ) -> list[SignalRecord]:
+        sql_parts = [
+            """
+            SELECT id, signal_id, strategy_id, account_id, ts, symbol, action, order_type,
+                   qty, amount, target_pos, limit_price, max_slippage_bps, expire_at,
+                   remark, payload_raw, payload_hash, sig_valid, received_at
+            FROM signals
+            WHERE 1=1
+            """
+        ]
+        params: list[Any] = []
+
+        if query:
+            like = f"%{query}%"
+            sql_parts.append(
+                "AND (signal_id ILIKE %s OR strategy_id ILIKE %s OR account_id ILIKE %s OR symbol ILIKE %s)"
+            )
+            params.extend([like, like, like, like])
+        if action is not None:
+            sql_parts.append("AND action = %s")
+            params.append(str(action))
+        if order_type is not None:
+            sql_parts.append("AND order_type = %s")
+            params.append(str(order_type))
+        if since is not None:
+            sql_parts.append("AND ts >= %s")
+            params.append(since)
+        if until is not None:
+            sql_parts.append("AND ts <= %s")
+            params.append(until)
+
+        sql_parts.append("ORDER BY id DESC LIMIT %s OFFSET %s")
+        params.extend([limit, offset])
+        sql = "\n".join(sql_parts)
+
+        with self._cursor() as cur:
+            cur.execute(sql, tuple(params))
+            rows = _fetchall_dict(cur)
+            return [_to_signal(row) for row in rows]
+
     def create_signal(self, cmd: SignalCommand, payload_hash: str, sig_valid: bool, now: datetime) -> SignalRecord:
         sql = """
             INSERT INTO signals (

@@ -35,9 +35,11 @@ This codebase applies the six confirmed defaults before full integration:
   - pull/recycle query locking (`FOR UPDATE SKIP LOCKED`)
   - task update optimistic lock (`WHERE id=? AND version=?`)
 - Alembic baseline is wired to execute `sql/001_init.sql`.
+- Replay protection now supports PostgreSQL (`request_nonces`) when `DB_URL` is set.
+- All API endpoints share the same signature authentication guard.
+- QMT agent skeleton added (pull/ack/place/report + local SQLite journal + retry).
 
 ## Next engineering slices
 
-- add QMT agent skeleton and local journal persistence
+- integrate real QMT xtquant/xttrader adapter + risk rules in agent
 - add EOD reconciliation module + test fixtures
-- replace in-memory replay guard with DB-backed nonce guard (`request_nonces`)

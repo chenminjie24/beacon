@@ -6,7 +6,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-COPY pyproject.toml README.md /app/
+COPY pyproject.toml README.md alembic.ini /app/
+COPY alembic /app/alembic
+COPY sql /app/sql
 COPY src /app/src
 
 RUN pip install --upgrade pip && pip install -e ".[api,db]"

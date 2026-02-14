@@ -7,7 +7,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Protocol
 
-from relay.domain.enums import Action, OrderStatus
+from relay.domain.enums import Action, OrderStatus, OrderType
 from relay.domain.models import (
     AgentHeartbeat,
     AuditEvent,
@@ -30,6 +30,19 @@ class RelayRepository(Protocol):
         ...
 
     def get_signal_by_signal_id(self, signal_id: str) -> SignalRecord | None:
+        ...
+
+    def list_signals(
+        self,
+        *,
+        limit: int,
+        offset: int,
+        query: str | None,
+        action: Action | None,
+        order_type: OrderType | None,
+        since: datetime | None,
+        until: datetime | None,
+    ) -> list[SignalRecord]:
         ...
 
     def create_signal(self, cmd: SignalCommand, payload_hash: str, sig_valid: bool, now: datetime) -> SignalRecord:
