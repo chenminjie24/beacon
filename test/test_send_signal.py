@@ -5,8 +5,8 @@ import hmac
 import hashlib
 import requests
 
-WEBHOOK_URL = "http://localhost:8000/api/v1/signals/webhook"
-WEBHOOK_SECRET = "replace-me"   # 和服务端 DEFAULT_WEBHOOK_SECRET 保持一致
+WEBHOOK_URL = "http://81.69.234.114:8000/api/v1/signals/webhook"
+WEBHOOK_SECRET = "quant-rich"   # 和服务端 DEFAULT_WEBHOOK_SECRET 保持一致
 SOURCE = "joinquant"
 STRATEGY_ID = "jq_alpha_001"
 ACCOUNT_ID = "acc_stock_main"

@@ -11,21 +11,32 @@ import { apiFetch, getAccessToken, handleAuthExpired } from '@/lib/api'
 export default function SignalsPage() {
   const router = useRouter()
   const [rows, setRows] = useState<any[]>([])
+  const [error, setError] = useState('')
 
-  useEffect(() => {
+  async function load() {
     const token = getAccessToken()
     if (!token) return
-    apiFetch<any[]>('/signals?limit=200', token)
-      .then(setRows)
-      .catch((err) => {
-        if (handleAuthExpired(err)) {
-          router.replace('/')
-        }
-      })
+    try {
+      const data = await apiFetch<any[]>('/signals?limit=200', token)
+      setRows(data)
+    } catch (err) {
+      if (handleAuthExpired(err)) {
+        router.replace('/')
+        return
+      }
+      throw err
+    }
+  }
+
+  useEffect(() => {
+    load().catch((err) => {
+      setError(err instanceof Error ? err.message : '加载信号失败')
+    })
   }, [router])
 
   return (
     <AppShell title="信号列表" subtitle="可用于排查幂等、风控拒绝与状态推进">
+      {error && <div className="error">{error}</div>}
       <DataTable
         columns={['ID', '平台', '策略', '账户', '标的', '方向', '状态', '时间']}
         rows={rows.map((r) => [
