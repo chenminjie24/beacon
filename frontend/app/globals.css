@@ -1,0 +1,248 @@
+:root {
+  --bg: #f3efe6;
+  --bg-2: #e9e1d3;
+  --ink: #1d1b17;
+  --muted: #665f54;
+  --line: #cbc0ad;
+  --card: rgba(255, 250, 239, 0.86);
+  --accent: #c14b24;
+  --accent-2: #264f7f;
+  --ok: #1b7b4b;
+  --warn: #ab6d00;
+  --bad: #b92626;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 8% 5%, rgba(193, 75, 36, 0.18), transparent 34%),
+    radial-gradient(circle at 92% 16%, rgba(38, 79, 127, 0.2), transparent 32%),
+    linear-gradient(160deg, var(--bg), var(--bg-2));
+  min-height: 100%;
+  font-family: 'IBM Plex Sans', 'PingFang SC', 'Hiragino Sans GB', sans-serif;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+.shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 260px 1fr;
+}
+
+.sidebar {
+  border-right: 1px solid var(--line);
+  background: rgba(255, 246, 228, 0.8);
+  padding: 24px 18px;
+}
+
+.brand {
+  font-family: 'Baskerville', 'Noto Serif SC', serif;
+  letter-spacing: 1px;
+  font-size: 22px;
+  margin-bottom: 10px;
+}
+
+.brand-sub {
+  color: var(--muted);
+  font-size: 12px;
+  margin-bottom: 28px;
+}
+
+.nav-item {
+  display: block;
+  padding: 10px 12px;
+  border-radius: 10px;
+  margin-bottom: 8px;
+  border: 1px solid transparent;
+  transition: 120ms ease;
+}
+
+.nav-item:hover {
+  border-color: var(--line);
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.nav-item.active {
+  background: #fff;
+  border-color: var(--ink);
+}
+
+.main {
+  padding: 26px 26px 32px;
+}
+
+.page-title {
+  font-family: 'Baskerville', 'Noto Serif SC', serif;
+  letter-spacing: 0.5px;
+  font-size: 30px;
+  margin: 0 0 18px;
+}
+
+.page-sub {
+  margin: -8px 0 18px;
+  color: var(--muted);
+}
+
+.grid {
+  display: grid;
+  gap: 14px;
+}
+
+.grid.metrics {
+  grid-template-columns: repeat(5, minmax(120px, 1fr));
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 16px;
+  backdrop-filter: blur(4px);
+}
+
+.metric-label {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.metric-value {
+  font-size: 28px;
+  margin-top: 8px;
+  font-weight: 700;
+}
+
+.table-wrap {
+  overflow: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  padding: 10px;
+  font-size: 13px;
+}
+
+th {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.badge {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 4px 8px;
+  font-size: 11px;
+  border: 1px solid var(--line);
+  background: #fff;
+}
+
+.badge.ok {
+  color: var(--ok);
+  border-color: rgba(27, 123, 75, 0.35);
+}
+
+.badge.warn {
+  color: var(--warn);
+  border-color: rgba(171, 109, 0, 0.35);
+}
+
+.badge.bad {
+  color: var(--bad);
+  border-color: rgba(185, 38, 38, 0.35);
+}
+
+.row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.input,
+.select {
+  width: 100%;
+  border: 1px solid var(--line);
+  background: #fff;
+  padding: 10px 12px;
+  border-radius: 10px;
+}
+
+.btn {
+  border: 1px solid var(--ink);
+  border-radius: 10px;
+  padding: 8px 12px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.btn.primary {
+  background: linear-gradient(120deg, var(--accent), #d06f2f);
+  color: #fff;
+  border-color: transparent;
+}
+
+.btn.ghost {
+  border-color: var(--line);
+}
+
+.login-wrap {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+.login-card {
+  width: 420px;
+  max-width: 100%;
+  padding: 24px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: rgba(255, 250, 239, 0.92);
+}
+
+.error {
+  color: var(--bad);
+  font-size: 12px;
+  margin-top: 10px;
+}
+
+@media (max-width: 980px) {
+  .shell {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+    padding: 16px;
+  }
+
+  .grid.metrics {
+    grid-template-columns: repeat(2, minmax(120px, 1fr));
+  }
+}

@@ -1,0 +1,16 @@
+services:
+  backend:
+    environment:
+      JWT_SECRET: ${JWT_SECRET}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      DEFAULT_WEBHOOK_SECRET: ${DEFAULT_WEBHOOK_SECRET}
+      CLIENT_SHARED_TOKEN: ${CLIENT_SHARED_TOKEN}
+
+  frontend:
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL}
+
+  nginx:
+    ports:
+      - "80:80"
+      - "443:443"
