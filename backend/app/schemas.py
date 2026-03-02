@@ -122,6 +122,8 @@ class SignalOut(BaseModel):
     signal_type: SignalType
     symbol: str
     side: Side
+    quantity: int | None
+    amount: float | None
     status: SignalStatus
     rejection_reason: str | None
     created_at: datetime

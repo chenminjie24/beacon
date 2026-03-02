@@ -38,7 +38,7 @@ export default function SignalsPage() {
     <AppShell title="信号列表" subtitle="可用于排查幂等、风控拒绝与状态推进">
       {error && <div className="error">{error}</div>}
       <DataTable
-        columns={['ID', '平台', '策略', '账户', '标的', '方向', '状态', '时间']}
+        columns={['ID', '平台', '策略', '账户', '标的', '方向', '股数', '金额', '状态', '时间']}
         rows={rows.map((r) => [
           r.id,
           r.source_platform,
@@ -46,6 +46,8 @@ export default function SignalsPage() {
           r.account_id,
           r.symbol,
           r.side,
+          r.quantity ?? '-',
+          r.amount ?? '-',
           <StatusBadge key={r.id} value={r.status} />,
           new Date(r.created_at).toLocaleString()
         ])}
