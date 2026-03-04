@@ -9,7 +9,7 @@ WEBHOOK_URL = "http://81.69.234.114:8000/api/v1/signals/webhook"
 WEBHOOK_SECRET = "quant-rich"   # 和服务端 DEFAULT_WEBHOOK_SECRET 保持一致
 SOURCE = "joinquant"
 STRATEGY_ID = "jq_alpha_001"
-ACCOUNT_ID = "acc_stock_main"
+ACCOUNT_ID = "8886602424"
 
 
 def send_signal(symbol, side, quantity=None, amount=None, signal_type="INCREMENTAL_ORDER", target_position_ratio=None, extra=None):
@@ -21,7 +21,7 @@ def send_signal(symbol, side, quantity=None, amount=None, signal_type="INCREMENT
         "idempotency_key": "jq_%d_%s_%s" % (int(time.time() * 1000), symbol, side),
         "symbol": symbol,                           # 例如 600519.SH / 000001.SZ
         "side": side,                               # BUY / SELL
-        "order_style": "MARKET",                    # MARKET / LIMIT
+        "order_style": "LIMIT",                    # MARKET / LIMIT
         "quantity": quantity,
         "amount": amount,
         "target_position_ratio": target_position_ratio,
@@ -46,12 +46,11 @@ def send_signal(symbol, side, quantity=None, amount=None, signal_type="INCREMENT
 def trade_logic():
     # 示例1：增量买入 100 股
     send_signal(
-        symbol="600519.SH",
+        symbol="511880.SH",
         side="BUY",
-        quantity=100,
-        amount=20000,
+        amount=12000,
         signal_type="INCREMENTAL_ORDER",
-        extra={"reference_price": 200}
+        extra={"reference_price": 100.227}
     )
 
     # 示例2：目标仓位到 30%

@@ -53,6 +53,8 @@ save_secret_file(
 python -m qmt_gateway.main
 ```
 
+客户端拉取到任务后，会在本地日志输出任务摘要，包含 `task_id`、`signal_id`、`strategy_id`、`symbol`、`side`、`quantity`。
+
 ## 目标仓位信号说明
 当 `signal_type=TARGET_POSITION` 时，客户端会：
 1. 用 `target_position_ratio` 读取目标仓位占比

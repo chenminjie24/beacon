@@ -57,6 +57,18 @@ def run() -> None:
 
             if tasks:
                 logger.info('claimed %s tasks', len(tasks))
+                for task in tasks:
+                    payload = dict(task.get('payload', {}) or {})
+                    logger.info(
+                        'task claimed. task_id=%s signal_id=%s action=%s strategy_id=%s symbol=%s side=%s quantity=%s',
+                        task.get('task_id'),
+                        task.get('signal_id'),
+                        task.get('action'),
+                        payload.get('strategy_id'),
+                        payload.get('symbol'),
+                        payload.get('side'),
+                        payload.get('quantity'),
+                    )
 
             for task in tasks:
                 try:

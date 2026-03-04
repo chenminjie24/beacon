@@ -48,7 +48,7 @@ services:
       - backend
 
   nginx:
-    image: nginx:1.27-alpine
+    image: nginx:1.28.2-alpine
     restart: unless-stopped
     depends_on:
       - frontend
