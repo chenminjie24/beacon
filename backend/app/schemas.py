@@ -124,6 +124,7 @@ class SignalOut(BaseModel):
     side: Side
     quantity: int | None
     amount: float | None
+    extra: dict[str, Any] | None
     status: SignalStatus
     rejection_reason: str | None
     created_at: datetime
