@@ -226,3 +226,119 @@ def test_report_trade_is_idempotent(client):
     order_after = next((o for o in orders_after if o['id'] == order['id']), None)
     assert order_after is not None
     assert order_after['filled_quantity'] == 100
+
+
+def test_report_trade_accepts_broker_order_id(client):
+    idem = f'idem_trade_broker_{int(time.time() * 1000)}'
+    signal_resp = send_signal(client, idempotency_key=idem, symbol='000001.SZ', quantity=100, amount=12000)
+    signal_id = signal_resp['signal_id']
+
+    claim = client.post(
+        '/api/v1/client/tasks/claim',
+        json={
+            'client_id': 'client_win_001',
+            'account_id': 'acc_stock_main',
+            'max_tasks': 20,
+            'capabilities': ['ORDER', 'CANCEL'],
+            'version': '0.1.0',
+        },
+        headers={'X-Client-Token': 'client-dev-token'},
+    )
+    assert claim.status_code == 200
+    task = next((item for item in claim.json()['tasks'] if item['signal_id'] == signal_id), None)
+    assert task is not None
+
+    report = client.post(
+        f"/api/v1/client/tasks/{task['task_id']}/report",
+        json={
+            'client_id': 'client_win_001',
+            'status': 'SUBMITTED',
+            'broker_order_id': 'broker_10001',
+            'message': 'ok',
+            'filled_quantity': 0,
+            'avg_price': 0,
+        },
+        headers={'X-Client-Token': 'client-dev-token'},
+    )
+    assert report.status_code == 200
+
+    trade_report = client.post(
+        '/api/v1/client/trades/report',
+        json={
+            'client_id': 'client_win_001',
+            'broker_order_id': 'broker_10001',
+            'broker_trade_id': f'trd_broker_{int(time.time() * 1000)}',
+            'quantity': 100,
+            'price': 12,
+        },
+        headers={'X-Client-Token': 'client-dev-token'},
+    )
+    assert trade_report.status_code == 200
+
+    token = login(client)
+    orders_after = client.get('/api/v1/orders?limit=200', headers={'Authorization': f'Bearer {token}'}).json()
+    order_after = next((o for o in orders_after if o['signal_id'] == signal_id), None)
+    assert order_after is not None
+    assert order_after['filled_quantity'] == 100
+    assert order_after['status'] == 'FILLED'
+
+
+def test_report_trade_rejects_broker_order_id_from_other_client_account(client):
+    idem = f'idem_trade_broker_scope_{int(time.time() * 1000)}'
+    signal_resp = send_signal(client, idempotency_key=idem, symbol='000001.SZ', quantity=100, amount=12000)
+    signal_id = signal_resp['signal_id']
+
+    claim = client.post(
+        '/api/v1/client/tasks/claim',
+        json={
+            'client_id': 'client_win_001',
+            'account_id': 'acc_stock_main',
+            'max_tasks': 20,
+            'capabilities': ['ORDER', 'CANCEL'],
+            'version': '0.1.0',
+        },
+        headers={'X-Client-Token': 'client-dev-token'},
+    )
+    assert claim.status_code == 200
+    task = next((item for item in claim.json()['tasks'] if item['signal_id'] == signal_id), None)
+    assert task is not None
+
+    report = client.post(
+        f"/api/v1/client/tasks/{task['task_id']}/report",
+        json={
+            'client_id': 'client_win_001',
+            'status': 'SUBMITTED',
+            'broker_order_id': 'broker_20001',
+            'message': 'ok',
+            'filled_quantity': 0,
+            'avg_price': 0,
+        },
+        headers={'X-Client-Token': 'client-dev-token'},
+    )
+    assert report.status_code == 200
+
+    heartbeat = client.post(
+        '/api/v1/client/heartbeat',
+        json={
+            'client_id': 'client_other_account',
+            'account_id': 'acc_stock_other',
+            'version': '0.1.0',
+            'capabilities': ['ORDER', 'CANCEL'],
+            'last_error': None,
+        },
+        headers={'X-Client-Token': 'client-dev-token'},
+    )
+    assert heartbeat.status_code == 200
+
+    trade_report = client.post(
+        '/api/v1/client/trades/report',
+        json={
+            'client_id': 'client_other_account',
+            'broker_order_id': 'broker_20001',
+            'broker_trade_id': f'trd_broker_scope_{int(time.time() * 1000)}',
+            'quantity': 100,
+            'price': 12,
+        },
+        headers={'X-Client-Token': 'client-dev-token'},
+    )
+    assert trade_report.status_code == 404

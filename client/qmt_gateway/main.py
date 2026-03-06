@@ -8,6 +8,7 @@ from qmt_gateway.api_client import ServerClient
 from qmt_gateway.config import ClientSettings
 from qmt_gateway.executor import QmtExecutor
 from qmt_gateway.secret_store import load_secret_file
+from qmt_gateway.trade_reporting import report_trade_callbacks
 
 logging.basicConfig(
     level=logging.INFO,
@@ -93,6 +94,13 @@ def run() -> None:
                         broker_order_id=None,
                         message=str(exc),
                     )
+
+            report_trade_callbacks(
+                api=api,
+                executor=executor,
+                client_id=settings.client_id,
+                last_error=last_error,
+            )
 
             time.sleep(settings.poll_interval_seconds)
     except KeyboardInterrupt:

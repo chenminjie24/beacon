@@ -33,6 +33,7 @@ class _CallbackState:
         self._logger = logger
         self._order_errors: deque[dict[str, Any]] = deque(maxlen=200)
         self._cancel_errors: deque[dict[str, Any]] = deque(maxlen=200)
+        self._trades: deque[dict[str, Any]] = deque(maxlen=2000)
         self._lock = Lock()
 
     def push_order_error(self, data: dict[str, Any]) -> None:
@@ -43,6 +44,10 @@ class _CallbackState:
         with self._lock:
             self._cancel_errors.appendleft(data)
 
+    def push_trade(self, data: dict[str, Any]) -> None:
+        with self._lock:
+            self._trades.append(data)
+
     def latest_order_error(self) -> dict[str, Any] | None:
         with self._lock:
             return self._order_errors[0] if self._order_errors else None
@@ -50,6 +55,17 @@ class _CallbackState:
     def latest_cancel_error(self) -> dict[str, Any] | None:
         with self._lock:
             return self._cancel_errors[0] if self._cancel_errors else None
+
+    def peek_trades(self) -> list[dict[str, Any]]:
+        with self._lock:
+            return list(self._trades)
+
+    def ack_trades(self, count: int) -> None:
+        if count <= 0:
+            return
+        with self._lock:
+            for _ in range(min(count, len(self._trades))):
+                self._trades.popleft()
 
 
 class XtQuantAdapter:
@@ -106,12 +122,19 @@ class XtQuantAdapter:
                 )
 
             def on_stock_trade(self, trade):
+                data = {
+                    'broker_order_id': str(getattr(trade, 'order_id', '') or ''),
+                    'broker_trade_id': str(getattr(trade, 'traded_id', '') or ''),
+                    'price': float(getattr(trade, 'traded_price', 0) or 0),
+                    'quantity': int(getattr(trade, 'traded_volume', 0) or 0),
+                }
+                callback_state.push_trade(data)
                 callback_state._logger.info(
                     'xtquant on_stock_trade order_id=%s trade_id=%s price=%s volume=%s',
-                    getattr(trade, 'order_id', None),
-                    getattr(trade, 'traded_id', None),
-                    getattr(trade, 'traded_price', None),
-                    getattr(trade, 'traded_volume', None),
+                    data['broker_order_id'],
+                    data['broker_trade_id'],
+                    data['price'],
+                    data['quantity'],
                 )
 
             def on_order_error(self, order_error):
@@ -152,6 +175,12 @@ class XtQuantAdapter:
         shutdown = getattr(self._trader, 'stop', None)
         if callable(shutdown):
             shutdown()
+
+    def peek_trades(self) -> list[dict[str, Any]]:
+        return self._callback_state.peek_trades()
+
+    def ack_trades(self, count: int) -> None:
+        self._callback_state.ack_trades(count)
 
     def place_order(self, payload: dict[str, Any]) -> tuple[str, str | None, str]:
         try:

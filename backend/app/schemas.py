@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from .models import (
     AlertStatus,
@@ -89,13 +89,20 @@ class TaskReportRequest(BaseModel):
 
 class TradeReportRequest(BaseModel):
     client_id: str
-    order_id: str
+    order_id: str | None = None
+    broker_order_id: str | None = None
     broker_trade_id: str
-    symbol: str
-    side: Side
+    symbol: str | None = None
+    side: Side | None = None
     quantity: int
     price: float
     traded_at: datetime | None = None
+
+    @model_validator(mode='after')
+    def validate_order_locator(self) -> 'TradeReportRequest':
+        if not self.order_id and not self.broker_order_id:
+            raise ValueError('order_id 和 broker_order_id 至少提供一个')
+        return self
 
 
 class CancelOrderResponse(BaseModel):

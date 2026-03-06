@@ -208,14 +208,28 @@ def report_task(task_id: str, payload: TaskReportRequest, db: Session = Depends(
 
 @router.post('/trades/report', dependencies=[Depends(verify_client_token)])
 def report_trade(payload: TradeReportRequest, db: Session = Depends(get_db)) -> dict:
-    order = db.query(Order).filter(Order.id == payload.order_id).first()
+    order = None
+    if payload.order_id:
+        order = db.query(Order).filter(Order.id == payload.order_id).first()
+    elif payload.broker_order_id:
+        client = db.query(Client).filter(Client.id == payload.client_id).first()
+        if not client:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='客户端不存在')
+        order = (
+            db.query(Order)
+            .filter(
+                Order.account_id == client.account_id,
+                Order.broker_order_id == payload.broker_order_id,
+            )
+            .first()
+        )
     if not order:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='订单不存在')
 
     duplicated = (
         db.query(Trade)
         .filter(
-            Trade.order_id == payload.order_id,
+            Trade.order_id == order.id,
             Trade.broker_trade_id == payload.broker_trade_id,
         )
         .first()
@@ -225,10 +239,10 @@ def report_trade(payload: TradeReportRequest, db: Session = Depends(get_db)) -> 
 
     trade = Trade(
         id=prefixed_id('trd'),
-        order_id=payload.order_id,
+        order_id=order.id,
         broker_trade_id=payload.broker_trade_id,
-        symbol=payload.symbol,
-        side=payload.side,
+        symbol=payload.symbol or order.symbol,
+        side=payload.side or order.side,
         quantity=payload.quantity,
         price=payload.price,
         traded_at=payload.traded_at or datetime.now(timezone.utc),
@@ -247,17 +261,17 @@ def report_trade(payload: TradeReportRequest, db: Session = Depends(get_db)) -> 
 
     latest_position = (
         db.query(PositionSnapshot)
-        .filter(PositionSnapshot.account_id == order.account_id, PositionSnapshot.symbol == payload.symbol)
+        .filter(PositionSnapshot.account_id == order.account_id, PositionSnapshot.symbol == trade.symbol)
         .order_by(PositionSnapshot.snapshot_at.desc())
         .first()
     )
     base_qty = latest_position.quantity if latest_position else 0
-    delta = payload.quantity if payload.side.value == 'BUY' else -payload.quantity
+    delta = payload.quantity if trade.side.value == 'BUY' else -payload.quantity
     new_qty = max(base_qty + delta, 0)
     position = PositionSnapshot(
         id=prefixed_id('pos'),
         account_id=order.account_id,
-        symbol=payload.symbol,
+        symbol=trade.symbol,
         quantity=new_qty,
         available_quantity=new_qty,
         avg_cost=payload.price if new_qty > 0 else 0,

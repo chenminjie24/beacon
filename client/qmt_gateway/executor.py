@@ -35,6 +35,15 @@ class QmtExecutor:
         if self._xt_adapter:
             self._xt_adapter.close()
 
+    def peek_trade_reports(self) -> list[dict[str, Any]]:
+        if self._xt_enabled and self._xt_adapter:
+            return self._xt_adapter.peek_trades()
+        return []
+
+    def ack_trade_reports(self, count: int) -> None:
+        if self._xt_enabled and self._xt_adapter:
+            self._xt_adapter.ack_trades(count)
+
     def execute(self, task: dict[str, Any]) -> ExecutionResult:
         action = task.get('action')
         payload = dict(task.get('payload', {}) or {})
