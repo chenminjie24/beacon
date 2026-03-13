@@ -122,6 +122,7 @@ def test_claim_and_report(client):
     assert len(tasks) >= 1
 
     task = tasks[0]
+    assert task['payload']['order_id'].startswith('ord_')
     report = client.post(
         f"/api/v1/client/tasks/{task['task_id']}/report",
         json={

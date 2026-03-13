@@ -15,6 +15,7 @@ def report_trade_callbacks(
 ) -> None:
     acked = 0
     for trade in executor.peek_trade_reports():
+        order_id = str(trade.get('order_id') or '').strip()
         broker_order_id = str(trade.get('broker_order_id') or '').strip()
         broker_trade_id = str(trade.get('broker_trade_id') or '').strip()
         quantity = int(trade.get('quantity', 0) or 0)
@@ -27,6 +28,7 @@ def report_trade_callbacks(
             api.report_trade(
                 {
                     'client_id': client_id,
+                    'order_id': order_id or None,
                     'broker_order_id': broker_order_id,
                     'broker_trade_id': broker_trade_id,
                     'quantity': quantity,

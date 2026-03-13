@@ -22,6 +22,7 @@ class QmtExecutor:
         self.secret_payload = secret_payload
         self.settings = settings
         self.logger = logging.getLogger(__name__)
+        self._broker_order_to_order_id: dict[str, str] = {}
 
         self._xt_adapter: XtQuantAdapter | None = None
         self._xt_enabled = False
@@ -37,7 +38,14 @@ class QmtExecutor:
 
     def peek_trade_reports(self) -> list[dict[str, Any]]:
         if self._xt_enabled and self._xt_adapter:
-            return self._xt_adapter.peek_trades()
+            reports: list[dict[str, Any]] = []
+            for trade in self._xt_adapter.peek_trades():
+                item = dict(trade)
+                broker_order_id = str(item.get('broker_order_id') or '').strip()
+                if broker_order_id and broker_order_id in self._broker_order_to_order_id:
+                    item['order_id'] = self._broker_order_to_order_id[broker_order_id]
+                reports.append(item)
+            return reports
         return []
 
     def ack_trade_reports(self, count: int) -> None:
@@ -88,6 +96,9 @@ class QmtExecutor:
     def _place_order(self, payload: dict[str, Any]) -> ExecutionResult:
         if self._xt_enabled and self._xt_adapter:
             status, broker_order_id, message = self._xt_adapter.place_order(payload)
+            order_id = str(payload.get('order_id') or '').strip()
+            if broker_order_id and order_id:
+                self._broker_order_to_order_id[str(broker_order_id)] = order_id
             return ExecutionResult(status=status, broker_order_id=broker_order_id, message=message)
 
         return ExecutionResult(

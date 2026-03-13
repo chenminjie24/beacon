@@ -148,6 +148,7 @@ async def receive_signal(
     db.flush()
 
     task_payload = {
+        'order_id': order.id,
         'strategy_id': signal.strategy_id,
         'symbol': signal.symbol,
         'side': signal.side.value,
